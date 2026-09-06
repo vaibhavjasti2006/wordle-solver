@@ -1,6 +1,7 @@
 import numpy as np
 from wordle_solver.word_loader import WordLoader
 from wordle_solver import pattern
+from tqdm import tqdm
 
 class WordEntropyGraph:
     """
@@ -24,7 +25,7 @@ class WordEntropyGraph:
             self.graph = np.load(file_path)
         else:
             self.graph = loader.build_matrix()
-            for guess, row in self.guess_index.items():
+            for guess, row in tqdm(self.guess_index.items(), desc="Building pattern matrix"):
                 for answer, col in self.answer_index.items():
                     self.graph[row, col] = pattern.compute_pattern(guess, answer)
 
