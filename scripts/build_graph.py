@@ -16,4 +16,4 @@ answers = np.array(answers)
 graph = WordEntropyGraph(guesses, answers)
 
 # Save the graph:
-graph.save_graph("graph.npy")
+graph.save_graph("data/graph.npy")

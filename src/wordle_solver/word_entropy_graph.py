@@ -2,6 +2,9 @@ import numpy as np
 from wordle_solver.word_loader import WordLoader
 from wordle_solver import pattern
 from tqdm import tqdm
+from functools import cmp_to_key
+
+epsilon = 0.01
 
 class WordEntropyGraph:
     """
@@ -74,8 +77,19 @@ class WordEntropyGraph:
             exp_entropy = -np.sum(prob_vec * np.log2(prob_vec))
             results.append((guess, exp_entropy))
 
-        # Sorts the guess words by entropy:
-        results.sort(key=lambda x: x[1], reverse=True)
+        # Custom comparision function:
+        # Sort by entropy if difference is > 0.01 else by wether or not smtg is eliminated
+        def compare(a, b):
+            if abs(a[1] - b[1]) > epsilon:
+                return -1 if a[1] > b[1] else 1
+            a_possible = not self.is_eliminated(a[0])
+            b_possible = not self.is_eliminated(b[0])
+            if a_possible == b_possible:
+                return 0
+            return -1 if a_possible else 1
+
+        # Sorts the guess words by entropy and then by valid guesses or not:
+        results.sort(key=cmp_to_key(compare))
         return results
 
     def get_information_gain(self, guess: str, feedback_pattern: str) -> float:
