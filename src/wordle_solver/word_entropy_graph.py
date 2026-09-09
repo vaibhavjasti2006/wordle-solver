@@ -4,8 +4,6 @@ from wordle_solver import pattern
 from tqdm import tqdm
 from functools import cmp_to_key
 
-epsilon = 0.01
-
 class WordEntropyGraph:
     """
     Behaviour: Build a guess x answer matrix and tracks which answers are possible candidates given
@@ -16,24 +14,27 @@ class WordEntropyGraph:
         file_path (str): Optional file path to a precomputed matrix (.npy) to load instead of rebuilding
             from scratch. Assumes the matrix was built from the exact same guesses/answers arrays. Do not use
             if not the case.
+        epsilon (float): How much difference the entropy of two words is allowed to be below which they are considered equal.
     """
-    def __init__(self, guesses: np.ndarray, answers: np.ndarray, file_path: str=None):
-        # Build the WordLoader with the given guesses and answers:
-        loader = WordLoader(guesses, answers)
-        self.guess_index = loader.get_guess_index()
-        self.answer_index = loader.get_answer_index()
-
-        # Load from file if available else compute the matrix from scratch:
-        if file_path is not None:
-            self.graph = np.load(file_path)
-        else:
-            self.graph = loader.build_matrix()
-            for guess, row in tqdm(self.guess_index.items(), desc="Building pattern matrix"):
-                for answer, col in self.answer_index.items():
-                    self.graph[row, col] = pattern.compute_pattern(guess, answer)
-
-        # Build a mask with the initial setting to consider all answers:
-        self.mask = np.full(self.graph.shape[1], True)
+    def __init__(self, guesses: np.ndarray, answers: np.ndarray, file_path: str=None, epsilon=0.01):
+            self.epsilon = epsilon
+            
+            # Build the WordLoader with the given guesses and answers:
+            loader = WordLoader(guesses, answers)
+            self.guess_index = loader.get_guess_index()
+            self.answer_index = loader.get_answer_index()
+    
+            # Load from file if available else compute the matrix from scratch:
+            if file_path is not None:
+                self.graph = np.load(file_path)
+            else:
+                self.graph = loader.build_matrix()
+                for guess, row in tqdm(self.guess_index.items(), desc="Building pattern matrix"):
+                    for answer, col in self.answer_index.items():
+                        self.graph[row, col] = pattern.compute_pattern(guess, answer)
+    
+            # Build a mask with the initial setting to consider all answers:
+            self.mask = np.full(self.graph.shape[1], True)
 
     def update_beliefs(self, guess: str, feedback_pattern: str) -> set[str]:
         """
@@ -80,7 +81,7 @@ class WordEntropyGraph:
         # Custom comparision function:
         # Sort by entropy if difference is > 0.01 else by wether or not smtg is eliminated
         def compare(a, b):
-            if abs(a[1] - b[1]) > epsilon:
+            if abs(a[1] - b[1]) > self.epsilon:
                 return -1 if a[1] > b[1] else 1
             a_possible = not self.is_eliminated(a[0])
             b_possible = not self.is_eliminated(b[0])
