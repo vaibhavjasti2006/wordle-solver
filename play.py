@@ -7,7 +7,7 @@ with open("data/valid_guesses.txt") as f:
 with open("data/valid_answers.txt") as f:
     answers = np.array(f.read().split())
 
-graph = WordEntropyGraph(guesses, answers, file_path="data/graph.npy")
+graph = WordEntropyGraph(guesses, answers, file_path="data/graph.npy", epsilon=0.08)
 
 def print_candidates():
     # Prints the current top 10 ranked guesses, their expected info gain,
